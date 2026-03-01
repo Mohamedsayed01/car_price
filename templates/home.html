@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Carvo | AI Car Price Prediction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav class="navbar" id="navbar">
+    <div class="container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='caricon.png') }}" alt="Carvo Logo">
+            <span>Carvo</span>
+        </div>
+
+        <ul class="nav-links">
+
+            <li><a href="/" title="Home"><i class="fa-solid fa-house"></i></a></li>
+
+            {% if logged_in %}
+                
+                <li><a href="/predict" title="Predict"><i class="fa-solid fa-car"></i></a></li>
+                <li><a href="/logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a></li>
+
+            {% else %}
+
+                <li><a href="/login" title="Login"><i class="fa-solid fa-lock"></i></a></li>
+                <li><a href="/register" title="Register"><i class="fa-solid fa-user-plus"></i></a></li>
+
+            {% endif %}
+
+        </ul>
+    </div>
+</nav>
+
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <h1>AI CAR PRICE PREDICTION</h1>
+            <p>Instant. Accurate. Intelligent.</p>
+            <a href="/predict" class="btn neon-btn">Start Prediction</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2026 Carvo | Developed by Mohamed Sayed</p>
+    </footer>
+
+    <!-- Script for Navbar Effect -->
+    <script>
+        window.addEventListener("scroll", function () {
+            const nav = document.getElementById("navbar");
+            if (window.scrollY > 50) {
+                nav.classList.add("scrolled");
+            } else {
+                nav.classList.remove("scrolled");
+            }
+        });
+    </script>
+
+</body>
+
+</html>
