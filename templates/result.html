@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carvo | Prediction Result</title>
+
+    <!-- Google Font -->
+    <link 
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" 
+        rel="stylesheet"
+    >
+
+    <!-- Custom CSS -->
+    <link 
+        rel="stylesheet" 
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+    <!-- ==================== Navbar ==================== -->
+<nav class="navbar" id="navbar">
+    <div class="container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='caricon.png') }}" alt="Carvo Logo">
+            <span>Carvo</span>
+        </div>
+
+        <ul class="nav-links">
+
+            <li><a href="/" title="Home"><i class="fa-solid fa-house"></i></a></li>
+
+        </ul>
+    </div>
+</nav>
+
+
+    <!-- ==================== Result Section ==================== -->
+    <section class="result-section">
+        <div class="result-box">
+            <h2>Estimated Car Price</h2>
+            <h1>${{ price }}</h1>
+            
+            <p class="result-desc">
+                This is an AI-based estimate of your car’s market value.
+            </p>
+
+            <a href="/predict" class="btn neon-btn">
+                Predict Another
+            </a>
+        </div>
+    </section>
+
+    <!-- ==================== Footer ==================== -->
+    <footer>
+        <p>© 2026 Carvo | Developed by Mohamed Sayed</p>
+    </footer>
+
+</body>
+</html>
