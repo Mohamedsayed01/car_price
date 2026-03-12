@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carvo | Profile</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+    <div class="container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='caricon.png') }}" alt="Carvo Logo">
+            <span>Carvo</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/" title="Home"><i class="fa-solid fa-house"></i></a></li>
+            <li><a href="/predict" title="Predict"><i class="fa-solid fa-car"></i></a></li>
+            <li><a href="/profile" title="Profile" class="active"><i class="fa-solid fa-user"></i></a></li>
+            <li><a href="/logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Profile Section -->
+<section class="auth-section" style="padding-top: 120px;">
+    <div class="auth-box" style="max-width: 520px; text-align: center;">
+        <h2>Profile</h2>
+
+        <!-- Welcome Message -->
+        <p style="font-size: 18px; margin: 20px 0 30px; color: #ffcc00;">
+            Welcome back, {{ profile.full_name }}!
+        </p>
+
+        <!-- Profile Card -->
+        <div style="background: rgba(255,255,255,0.06); padding: 30px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <!-- Avatar & Name -->
+            <div style="margin-bottom: 25px;">
+                <i class="fas fa-user-circle" style="font-size: 80px; color: #ffcc00; margin-bottom: 15px; display: block;"></i>
+                <h3 style="margin: 0; font-size: 26px; color: white;">
+                    {{ profile.full_name }}
+                </h3>
+                <p style="color: #aaa; margin: 8px 0 0; font-size: 15px;">
+                    @{{ profile.username }}
+                </p>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.12); margin: 25px 0;">
+
+            <!-- Email -->
+            <div style="text-align: left; margin-bottom: 20px;">
+                <strong style="color: #ffcc00; display: block; margin-bottom: 6px;">
+                    <i class="fas fa-envelope" style="margin-right: 10px;"></i>
+                    Email
+                </strong>
+                <p style="margin: 0; color: #ddd; font-size: 16px;">
+                    {{ profile.email }}
+                </p>
+            </div>
+
+            <!-- Joined Date (placeholder) -->
+
+            <div style="text-align: left; margin-bottom: 20px;">
+                <strong style="color: #ffcc00; display: block; margin-bottom: 6px;">
+                    <i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>
+                    Joined
+                </strong>
+                <p style="margin: 0; color: #ddd; font-size: 16px;">
+                    {{ profile.created_at | truncate(10, true, '') }}
+                </p>
+            </div>
+
+            <!-- Predictions Count (placeholder) -->
+            <div style="text-align: left;">
+              <strong style="color: #ffcc00; display: block; margin-bottom: 6px;">
+                <i class="fas fa-car" style="margin-right: 10px;"></i>
+                 Predictions Made
+            </strong>
+            <p style="margin: 0; color: #ddd; font-size: 16px;">
+                 {{ profile.prediction_count }}
+              </p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+            <a href="/edit_profile" class="btn neon-btn" style="padding: 12px 35px; font-weight: 600;">
+                Edit Profile
+            </a>
+            <a href="/logout" class="btn neon-btn" style="padding: 12px 45px; font-weight: 600;">
+                Logout
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <p>© 2026 Carvo | Developed by Mohamed Sayed</p>
+</footer>
+
+<!-- Navbar Scroll Effect -->
+<script>
+    window.addEventListener("scroll", function () {
+        const nav = document.getElementById("navbar");
+        if (window.scrollY > 50) {
+            nav.classList.add("scrolled");
+        } else {
+            nav.classList.remove("scrolled");
+        }
+    });
+</script>
+
+</body>
+</html>
