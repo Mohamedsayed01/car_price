@@ -1,107 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
-    
-8<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 <head>
     <meta charset="UTF-8">
-    <title>Carvo | Predict Price</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Font -->
+    <title>Carvo | Predict Price</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
 
-    <!-- Navbar -->
 <nav class="navbar" id="navbar">
     <div class="container">
         <div class="logo">
             <img src="{{ url_for('static', filename='caricon.png') }}" alt="Carvo Logo">
             <span>Carvo</span>
         </div>
-
         <ul class="nav-links">
-
             <li><a href="/" title="Home"><i class="fa-solid fa-house"></i></a></li>
-
             {% if logged_in %}
-                
                 <li><a href="/predict" title="Predict"><i class="fa-solid fa-car"></i></a></li>
+                <li><a href="/profile" title="Profile"><i class="fa-solid fa-user"></i></a></li>
                 <li><a href="/logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a></li>
-
             {% else %}
-
-                <li><a href="/login" title="Login"><i class="fa-solid fa-lock"></i></a></li>
+                <li><a href="/login" title="Login"><i class="fa-solid fa-right-to-bracket"></i></a></li>
                 <li><a href="/register" title="Register"><i class="fa-solid fa-user-plus"></i></a></li>
-
             {% endif %}
-
         </ul>
     </div>
 </nav>
 
-    <!-- Predict Section -->
-    <section class="hero predict-hero">
-        <div class="overlay"></div>
-        <div class="predict-container">
+<section class="hero predict-hero">
+    <div class="predict-container">
+        <h1>Enter Car Details</h1>
+        <p>Fill the form below to get an instant price estimation</p>
 
-            <h1>Enter Car Details</h1>
-            <p>Fill the form below to get an instant price estimation</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p style="color: {% if category=='error' %}#ff4444{% else %}#44ff44{% endif %}; text-align:center; margin-bottom:20px;">
+                        {{ message }}
+                    </p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-            <form method="POST" class="predict-form">
+        <form method="POST" class="predict-form">
+            <div class="form-group">
+                <label>Year</label>
+                <input type="number" name="year" placeholder="e.g. 2016" required min="1900" max="2026">
+            </div>
 
-                <div class="form-group">
-                    <label>Year</label>
-                    <input type="number" name="year" placeholder="e.g. 2016" required>
-                </div>
+            <div class="form-group">
+                <label>Kilometers Driven</label>
+                <input type="number" name="km_driven" placeholder="e.g. 45000" required min="0">
+            </div>
 
-                <div class="form-group">
-                    <label>Kilometers Driven</label>
-                    <input type="number" name="km_driven" placeholder="e.g. 45000" required>
-                </div>
+            <div class="form-group">
+                <label>Fuel Type</label>
+                <select name="fuel" required>
+                    <option value="" disabled selected>Select fuel type</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="CNG">CNG</option>
+                </select>
+            </div>
 
-                <div class="form-group">
-                    <label>Fuel Type</label>
-                    <select name="fuel" required>
-                        <option value="0">Petrol</option>
-                        <option value="1">Diesel</option>
-                        <option value="2">CNG</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label>Transmission</label>
+                <select name="transmission" required>
+                    <option value="" disabled selected>Select transmission</option>
+                    <option value="Manual">Manual</option>
+                    <option value="Automatic">Automatic</option>
+                </select>
+            </div>
 
-                <div class="form-group">
-                    <label>Transmission</label>
-                    <select name="transmission" required>
-                        <option value="0">Manual</option>
-                        <option value="1">Automatic</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label>Owner</label>
+                <select name="owner" required>
+                    <option value="" disabled selected>Select owner count</option>
+                    <option value="First Owner">First Owner</option>
+                    <option value="Second Owner">Second Owner</option>
+                    <option value="Third Owner">Third Owner</option>
+                </select>
+            </div>
 
-                <div class="form-group">
-                    <label>Owner</label>
-                    <select name="owner" required>
-                        <option value="0">First Owner</option>
-                        <option value="1">Second Owner</option>
-                        <option value="2">Third Owner</option>
-                    </select>
-                </div>
+            <button type="submit" class="btn neon-btn">Predict Price</button>
+        </form>
+    </div>
+</section>
 
-                <button type="submit" class="btn neon-btn">Predict Price</button>
+<footer>
+    <p>© 2026 Carvo | Developed by Mohamed Sayed</p>
+</footer>
 
-            </form>
-
-        </div>
-    </section>
-
-    <footer>
-        <p>© 2026 Carvo | Developed by Mohamed Sayed</p>
-    </footer>
+<script>
+    window.addEventListener("scroll", function () {
+        const nav = document.getElementById("navbar");
+        if (window.scrollY > 50) nav.classList.add("scrolled");
+        else nav.classList.remove("scrolled");
+    });
+</script>
 
 </body>
-
 </html>
