@@ -3,12 +3,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import re
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
+import uuid
 
 app = Flask(__name__)
 app.secret_key = "carvo_secret_very_secure_2026"
 
-# إنشاء قاعدة البيانات
+reset_tokens = {}  # token → {'username': ..., 'expires': ...}
+
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -126,7 +128,6 @@ def predict():
             year = int(request.form.get("year"))
             km_driven = int(request.form.get("km_driven"))
 
-            # زيادة عدد التوقعات
             conn = get_db()
             c = conn.cursor()
             c.execute("UPDATE users SET prediction_count = prediction_count + 1 WHERE username = ?", (session["user"],))
@@ -172,6 +173,7 @@ def profile():
     }
 
     return render_template("profile.html", profile=profile_info)
+
 @app.route("/edit_profile", methods=["GET", "POST"])
 def edit_profile():
     if "user" not in session:
@@ -198,7 +200,11 @@ def edit_profile():
             conn.close()
             return redirect(url_for("edit_profile"))
 
-        # تحديث البيانات
+        if new_password and len(new_password) < 8:
+            flash("New password must be at least 8 characters!", "error")
+            conn.close()
+            return redirect(url_for("edit_profile"))
+
         if new_password:
             password_hash = generate_password_hash(new_password)
             c.execute("""
@@ -219,7 +225,6 @@ def edit_profile():
         flash("Profile updated successfully!", "success")
         return redirect(url_for("profile"))
 
-    # GET: جلب البيانات الحالية
     c.execute("SELECT username, full_name, email FROM users WHERE username = ?", (username,))
     user = c.fetchone()
     conn.close()
@@ -229,6 +234,74 @@ def edit_profile():
         return redirect(url_for("logout"))
 
     return render_template("edit_profile.html", profile=user)
+
+@app.route("/forgot_password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT username FROM users WHERE email = ?", (email,))
+        user = c.fetchone()
+        conn.close()
+
+        if user:
+            token = str(uuid.uuid4())
+            expires = datetime.now() + timedelta(hours=1)
+            reset_tokens[token] = {
+                "username": user["username"],
+                "expires": expires
+            }
+
+            reset_link = url_for("reset_password", token=token, _external=True)
+            print(f"[RESET LINK for {email}]: {reset_link}")
+
+            flash("If an account exists with this email, you will receive a password reset link.", "success")
+        else:
+            flash("If an account exists with this email, you will receive a password reset link.", "success")
+
+        return redirect(url_for("login"))
+
+    return render_template("forgot_password.html")
+
+@app.route("/reset_password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    if token not in reset_tokens:
+        flash("Invalid or expired reset link.", "error")
+        return redirect(url_for("login"))
+
+    data = reset_tokens[token]
+    if datetime.now() > data["expires"]:
+        del reset_tokens[token]
+        flash("Reset link has expired.", "error")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not new_password or new_password != confirm_password:
+            flash("Passwords do not match or are empty!", "error")
+            return redirect(url_for("reset_password", token=token))
+
+        if len(new_password) < 8:
+            flash("Password must be at least 8 characters!", "error")
+            return redirect(url_for("reset_password", token=token))
+
+        password_hash = generate_password_hash(new_password)
+
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("UPDATE users SET password_hash = ? WHERE username = ?", (password_hash, data["username"]))
+        conn.commit()
+        conn.close()
+
+        del reset_tokens[token]
+        flash("Password reset successfully! Please log in.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("reset_password.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
