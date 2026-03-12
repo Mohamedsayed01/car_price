@@ -1,61 +1,234 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+import sqlite3
+import re
 import random
+from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = "carvo_secret_1234"
+app.secret_key = "carvo_secret_very_secure_2026"
 
-# Simple in-memory user storage
-users = {}
+# إنشاء قاعدة البيانات
+def init_db():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            full_name TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            prediction_count INTEGER DEFAULT 0
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def get_db():
+    conn = sqlite3.connect('users.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
 @app.route("/")
 def home():
-    return render_template("home.html", logged_in=session.get("user"))
+    logged_in = "user" in session
+    return render_template("home.html", logged_in=logged_in)
 
-# Register
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        terms = request.form.get("terms")
 
-        if username in users:
-            return render_template("register.html", msg="❌ Username already exists")
-        users[username] = password
-        return redirect("/login")
+        if not all([full_name, email, username, password, confirm]):
+            flash("All fields are required!", "error")
+            return redirect(url_for("register"))
+
+        if password != confirm:
+            flash("Passwords do not match!", "error")
+            return redirect(url_for("register"))
+
+        if len(password) < 8:
+            flash("Password must be at least 8 characters!", "error")
+            return redirect(url_for("register"))
+
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            flash("Invalid email format!", "error")
+            return redirect(url_for("register"))
+
+        if not terms:
+            flash("You must agree to the terms!", "error")
+            return redirect(url_for("register"))
+
+        password_hash = generate_password_hash(password)
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        conn = get_db()
+        c = conn.cursor()
+        try:
+            c.execute("""
+                INSERT INTO users (username, email, full_name, password_hash, created_at, prediction_count)
+                VALUES (?, ?, ?, ?, ?, 0)
+            """, (username, email, full_name, password_hash, created_at))
+            conn.commit()
+            flash("Registration successful! Please log in.", "success")
+            return redirect(url_for("login"))
+        except sqlite3.IntegrityError:
+            flash("Username or email already exists!", "error")
+        finally:
+            conn.close()
 
     return render_template("register.html")
 
-# Login
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
-        if username in users and users[username] == password:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = c.fetchone()
+        conn.close()
+
+        if user and check_password_hash(user["password_hash"], password):
             session["user"] = username
-            return redirect("/predict")
-        return render_template("login.html", msg="❌ Invalid credentials")
+            flash("Login successful!", "success")
+            return redirect(url_for("predict"))
+        else:
+            flash("Invalid username or password!", "error")
 
     return render_template("login.html")
 
-# Logout
 @app.route("/logout")
 def logout():
     session.pop("user", None)
-    return redirect("/")
+    flash("Logged out successfully.", "success")
+    return redirect(url_for("home"))
 
-# Predict (protected)
 @app.route("/predict", methods=["GET", "POST"])
 def predict():
-    if not session.get("user"):
-        return redirect("/login")
+    if "user" not in session:
+        flash("Please log in to make a prediction.", "error")
+        return redirect(url_for("login"))
 
     if request.method == "POST":
-        fake_price = random.randint(300000, 900000)
-        return render_template("result.html", price=fake_price)
+        try:
+            year = int(request.form.get("year"))
+            km_driven = int(request.form.get("km_driven"))
 
-    return render_template("predict.html", logged_in=session.get("user"))
+            # زيادة عدد التوقعات
+            conn = get_db()
+            c = conn.cursor()
+            c.execute("UPDATE users SET prediction_count = prediction_count + 1 WHERE username = ?", (session["user"],))
+            conn.commit()
+            conn.close()
+
+            price = random.randint(280000, 1400000)
+            price = round(price / 1000) * 1000
+
+            return render_template("result.html", price=price)
+        except:
+            flash("Invalid input. Please check the values.", "error")
+
+    return render_template("predict.html")
+
+@app.route("/profile")
+def profile():
+    if "user" not in session:
+        flash("Please log in first.", "error")
+        return redirect(url_for("login"))
+
+    username = session["user"]
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+        SELECT username, full_name, email, created_at, prediction_count 
+        FROM users 
+        WHERE username = ?
+    """, (username,))
+    user = c.fetchone()
+    conn.close()
+
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for("logout"))
+
+    profile_info = {
+        "username": user["username"],
+        "full_name": user["full_name"],
+        "email": user["email"],
+        "created_at": user["created_at"],
+        "prediction_count": user["prediction_count"] if user["prediction_count"] is not None else 0
+    }
+
+    return render_template("profile.html", profile=profile_info)
+@app.route("/edit_profile", methods=["GET", "POST"])
+def edit_profile():
+    if "user" not in session:
+        flash("Please log in first.", "error")
+        return redirect(url_for("login"))
+
+    username = session["user"]
+    conn = get_db()
+    c = conn.cursor()
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip()
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not all([full_name, email]):
+            flash("Full name and email are required!", "error")
+            conn.close()
+            return redirect(url_for("edit_profile"))
+
+        if new_password and new_password != confirm_password:
+            flash("New passwords do not match!", "error")
+            conn.close()
+            return redirect(url_for("edit_profile"))
+
+        # تحديث البيانات
+        if new_password:
+            password_hash = generate_password_hash(new_password)
+            c.execute("""
+                UPDATE users 
+                SET full_name = ?, email = ?, password_hash = ? 
+                WHERE username = ?
+            """, (full_name, email, password_hash, username))
+        else:
+            c.execute("""
+                UPDATE users 
+                SET full_name = ?, email = ? 
+                WHERE username = ?
+            """, (full_name, email, username))
+
+        conn.commit()
+        conn.close()
+
+        flash("Profile updated successfully!", "success")
+        return redirect(url_for("profile"))
+
+    # GET: جلب البيانات الحالية
+    c.execute("SELECT username, full_name, email FROM users WHERE username = ?", (username,))
+    user = c.fetchone()
+    conn.close()
+
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for("logout"))
+
+    return render_template("edit_profile.html", profile=user)
 
 if __name__ == "__main__":
     app.run(debug=True)
